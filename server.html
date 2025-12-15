@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>HRV Monitor (ESP32)</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #0f172a;
+      color: #e5e7eb;
+      text-align: center;
+      padding-top: 60px;
+    }
+    .card {
+      background: #020617;
+      padding: 30px;
+      width: 300px;
+      margin: auto;
+      border-radius: 12px;
+      box-shadow: 0 0 20px #0ea5e9;
+    }
+    h1 {
+      color: #38bdf8;
+    }
+    #hrv {
+      font-size: 48px;
+      margin: 20px 0;
+    }
+    button {
+      padding: 12px 20px;
+      font-size: 16px;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      background: #0ea5e9;
+      color: black;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="card">
+    <h1>HRV Monitor</h1>
+    <div id="hrv">--</div>
+    <button onclick="connectBLE()">Connect ESP32</button>
+  </div>
+
+<script>
+let hrvCharacteristic;
+
+async function connectBLE() {
+  try {
+    const device = await navigator.bluetooth.requestDevice({
+      filters: [{ namePrefix: 'ESP32' }],
+      optionalServices: ['12345678-1234-1234-1234-1234567890ab']
+    });
+
+    const server = await device.gatt.connect();
+    const service = await server.getPrimaryService(
+      '12345678-1234-1234-1234-1234567890ab'
+    );
+
+    hrvCharacteristic = await service.getCharacteristic(
+      'abcd1234-1234-1234-1234-abcdef123456'
+    );
+
+    await hrvCharacteristic.startNotifications();
+    hrvCharacteristic.addEventListener(
+      'characteristicvaluechanged',
+      handleHRV
+    );
+
+  } catch (error) {
+    alert("Bluetooth connection failed");
+    console.error(error);
+  }
+}
+
+function handleHRV(event) {
+  const value = new TextDecoder().decode(event.target.value);
+  document.getElementById("hrv").innerText = value + " ms";
+}
+</script>
+
+</body>
+</html>
