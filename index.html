@@ -2,48 +2,71 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>HRV Monitor (ESP32)</title>
+  <title>HRV Based Stress Analysis</title>
+
   <style>
     body {
       font-family: Arial, sans-serif;
-      background: #0f172a;
+      background: #020617;
       color: #e5e7eb;
-      text-align: center;
-      padding-top: 60px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
     }
+
     .card {
       background: #020617;
+      border: 2px solid #0ea5e9;
       padding: 30px;
-      width: 300px;
-      margin: auto;
-      border-radius: 12px;
+      width: 320px;
+      text-align: center;
+      border-radius: 15px;
       box-shadow: 0 0 20px #0ea5e9;
     }
+
     h1 {
       color: #38bdf8;
     }
+
     #hrv {
-      font-size: 48px;
-      margin: 20px 0;
+      font-size: 42px;
+      margin: 15px 0;
     }
+
+    #stress {
+      font-size: 24px;
+      margin-top: 10px;
+      font-weight: bold;
+    }
+
     button {
-      padding: 12px 20px;
+      margin-top: 20px;
+      padding: 12px;
       font-size: 16px;
-      border: none;
       border-radius: 8px;
+      border: none;
       cursor: pointer;
       background: #0ea5e9;
       color: black;
+      width: 100%;
     }
   </style>
 </head>
+
 <body>
 
-  <div class="card">
-    <h1>HRV Monitor</h1>
-    <div id="hrv">--</div>
-    <button onclick="connectBLE()">Connect ESP32</button>
-  </div>
+<div class="card">
+  <h1>HRV Monitor</h1>
+
+  <div>HRV (ms)</div>
+  <div id="hrv">--</div>
+
+  <div>Stress Level</div>
+  <div id="stress">--</div>
+
+  <button onclick="connectBLE()">Connect ESP32</button>
+</div>
 
 <script>
 let hrvCharacteristic;
@@ -70,15 +93,38 @@ async function connectBLE() {
       handleHRV
     );
 
-  } catch (error) {
+  } catch (err) {
     alert("Bluetooth connection failed");
-    console.error(error);
+    console.error(err);
   }
 }
 
 function handleHRV(event) {
-  const value = new TextDecoder().decode(event.target.value);
-  document.getElementById("hrv").innerText = value + " ms";
+  const rawValue = new TextDecoder().decode(event.target.value);
+  const hrv = parseFloat(rawValue);
+
+  if (isNaN(hrv)) return;
+
+  document.getElementById("hrv").innerText = hrv + " ms";
+
+  analyzeStress(hrv);
+}
+
+function analyzeStress(hrv) {
+  const stressEl = document.getElementById("stress");
+
+  if (hrv > 80) {
+    stressEl.innerText = "LOW STRESS 😊";
+    stressEl.style.color = "#22c55e"; // green
+  }
+  else if (hrv >= 50) {
+    stressEl.innerText = "MODERATE STRESS 😐";
+    stressEl.style.color = "#facc15"; // yellow
+  }
+  else {
+    stressEl.innerText = "HIGH STRESS 😟";
+    stressEl.style.color = "#ef4444"; // red
+  }
 }
 </script>
 
